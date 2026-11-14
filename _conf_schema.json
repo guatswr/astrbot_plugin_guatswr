@@ -1,0 +1,88 @@
+{
+  "enabled": {
+    "description": "启用网站助手",
+    "type": "bool",
+    "default": false,
+    "hint": "先填写下列配置，再启用并重载插件。"
+  },
+  "site_url": {
+    "description": "网站公开地址",
+    "type": "string",
+    "default": "https://guatswr.top",
+    "hint": "用于消息内的网站链接和默认图片来源，例如 https://guatswr.top。"
+  },
+  "api_origin": {
+    "description": "Bot API 所在后端地址",
+    "type": "string",
+    "default": "",
+    "hint": "同 Compose 网络例如 http://backend:3000，不带 /api/bot。留空使用 site_url，但当前网站公开 BFF 不代理这些接口，须提供可达后端或单独代理。"
+  },
+  "api_token": {
+    "description": "网站 Bot 服务凭据",
+    "type": "string",
+    "default": "",
+    "secret": true,
+    "hint": "网站 /admin/bot 创建的 gwb_ 开头 Token。"
+  },
+  "credential_id": {
+    "description": "网站 Bot 凭据 ID",
+    "type": "string",
+    "default": "",
+    "hint": "与 api_token 对应的凭据 UUID，用于核验 Webhook target.bot_id。"
+  },
+  "platform_id": {
+    "description": "AstrBot OneBot v11 平台 ID",
+    "type": "string",
+    "default": "",
+    "hint": "填写 AstrBot 消息平台配置中的实例 ID，适配器类型必须为 aiocqhttp。"
+  },
+  "allowed_groups": {
+    "description": "允许查询、订阅和同步的 QQ 群",
+    "type": "list",
+    "default": [],
+    "hint": "每项一个群号字符串，同时也要在网站 Bot 凭据中授权这些群。"
+  },
+  "webhook_token": {
+    "description": "网站出站 Webhook Token",
+    "type": "string",
+    "default": "",
+    "secret": true,
+    "hint": "须与网站 ASTRBOT_TOKEN 完全一致，与 api_token 分开使用。"
+  },
+  "webhook_host": {
+    "description": "Webhook 监听地址",
+    "type": "string",
+    "default": "127.0.0.1",
+    "hint": "同机反向代理默认回环；容器中按需改为 0.0.0.0 并限制网络访问。"
+  },
+  "webhook_port": {
+    "description": "Webhook 监听端口",
+    "type": "int",
+    "default": 9245,
+    "hint": "接收路径固定为 /guatswr/webhook。"
+  },
+  "legacy_groups": {
+    "description": "旧版无 target 通知的默认接收群",
+    "type": "list",
+    "default": [],
+    "hint": "默认不转发旧通知。启用时必须是 allowed_groups 的子集。"
+  },
+  "asset_origin": {
+    "description": "网站公开图片 origin",
+    "type": "string",
+    "default": "",
+    "hint": "留空使用 site_url；使用其他公开资源域名时，与后端 BOT_PUBLIC_ASSET_BASE_URL 保持一致。"
+  },
+  "max_broadcast_images": {
+    "description": "历史上的今天每次最多发送图片数",
+    "type": "int",
+    "default": 6,
+    "hint": "0–20。设为 0 仅发送文字，每张图片失败后继续处理其他图片。"
+  },
+  "sync_avatars": {
+    "description": "采集成员时回传 QQ 头像",
+    "type": "bool",
+    "default": true,
+    "hint": "通过固定 QQ 头像服务匿名下载，仅回传 PNG/JPEG/WebP 原始字节；接近任务期限时优先提交完整名单。"
+  }
+}

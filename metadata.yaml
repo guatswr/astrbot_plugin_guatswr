@@ -1,0 +1,7 @@
+name: astrbot_plugin_guatswr
+display_name: 桂航绯想天网站助手
+desc: 对接 GuatSWR Bot API，提供网站查询、报名审核、通知与 QQ 群成员同步。
+version: v0.1.0
+author: GuatSWR
+repo: https://github.com/guatswr/astrbot_plugin_guatswr
+astrbot_version: '>=4.5.0'

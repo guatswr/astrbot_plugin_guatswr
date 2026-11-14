@@ -1,0 +1,1 @@
+"""GuatSWR AstrBot plugin."""
