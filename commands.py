@@ -5,6 +5,7 @@ import re
 import shlex
 from datetime import date
 
+from .broadcast import on_this_day
 from .protocol import EVENTS, positive, qq, uuid
 
 HELP = '''桂航绯想天网站助手
@@ -97,15 +98,7 @@ class Commands:
                 params['page'] = positive(args.pop(0))
             if args:
                 raise ValueError('用法：今天 [YYYY-MM-DD] [all|articles|history] [页码]')
-            result = await self.api.request('GET', '/v1/on-this-day', params=params)
-            output = result['broadcast_text']
-            if result.get('has_more'):
-                output += f"\n还有更多记录，请查询第 {result['page'] + 1} 页。"
-            images = result.get('broadcast_images', [])
-            cap = int(self.service.config.get('max_broadcast_images', 6))
-            if len(images) > cap:
-                output += f'\n本次配图最多 {cap} 张，完整记录请查看网站。'
-            return output, images[:cap]
+            return await on_this_day(self.api, self.service.config, params)
         if command == '绑定' and len(args) == 1:
             if not re.fullmatch(r'[a-f0-9]{32}', args[0]):
                 raise ValueError('请从网站取得有效的 32 位绑定码。')

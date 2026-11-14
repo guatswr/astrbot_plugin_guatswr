@@ -64,6 +64,17 @@ class Inbox:
             # the digest/ID so later redelivery remains deduplicated.
             self.db.execute("UPDATE inbox SET state='done',payload='{}',checkpoint='{}',error=NULL WHERE id=?", (identifier,))
 
+    def defer(self, identifier, due):
+        with self.db:
+            self.db.execute("UPDATE inbox SET state='pending',due=?,attempts=MAX(0,attempts-1),error='scheduled' WHERE id=?",
+                            (due, identifier))
+
+    def release_deferred(self, identifier):
+        with self.db:
+            return bool(self.db.execute(
+                "UPDATE inbox SET due=0,error=NULL WHERE id=? AND state='pending' AND error='scheduled'",
+                (identifier,)).rowcount)
+
     def fail(self, job, code, permanent=False):
         final = permanent or job['attempts'] >= 5
         with self.db:

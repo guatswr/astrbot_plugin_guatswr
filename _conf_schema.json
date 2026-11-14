@@ -79,6 +79,24 @@
     "default": 6,
     "hint": "0–20。设为 0 仅发送文字，每张图片失败后继续处理其他图片。"
   },
+  "daily_broadcast_enabled": {
+    "description": "启用历史上的今天每日群播报",
+    "type": "bool",
+    "default": false,
+    "hint": "每天按北京时间向下列目标群播报；需 query:read 权限，修改后重载插件。"
+  },
+  "daily_broadcast_time": {
+    "description": "每日播报时间（北京时间）",
+    "type": "string",
+    "default": "09:00",
+    "hint": "24 小时制 HH:MM，例如 09:00 或 20:30。当天错过时间会在启动后补发，不补往日。"
+  },
+  "daily_broadcast_groups": {
+    "description": "每日播报目标 QQ 群",
+    "type": "list",
+    "default": [],
+    "hint": "每项一个群号字符串，至少一个，且须属于 allowed_groups；每群每日保存独立发送进度。"
+  },
   "sync_avatars": {
     "description": "采集成员时回传 QQ 头像",
     "type": "bool",

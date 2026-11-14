@@ -8,6 +8,7 @@ import time
 import aiohttp
 from aiohttp import web
 
+from .broadcast import DAILY_EVENT, DailyBroadcast
 from .client import ApiError
 from .protocol import notification_text, positive, qq, uuid, validate_envelope
 
@@ -20,8 +21,9 @@ class Service:
         if not self.legacy_groups <= self.groups:
             raise ValueError('旧通知默认群必须属于 allowed_groups。')
         self.credential_id = uuid(config['credential_id'])
+        self.daily = DailyBroadcast(config, api, inbox, bot, self.groups, self.credential_id, logger)
         self.wake = asyncio.Event()
-        self.worker = self.runner = None
+        self.worker = self.scheduler = self.runner = None
 
     async def start(self):
         app = web.Application(client_max_size=256 * 1024)
@@ -35,14 +37,18 @@ class Service:
             await self.runner.cleanup()
             raise
         self.worker = asyncio.create_task(self.run(), name='guatswr-inbox')
+        if self.daily.enabled:
+            self.scheduler = asyncio.create_task(self.daily.run(self.wake), name='guatswr-daily-broadcast')
 
     async def close(self):
         if self.runner:
             await self.runner.cleanup()
-        if self.worker:
-            self.worker.cancel()
+        tasks = [task for task in (self.scheduler, self.worker) if task is not None]
+        for task in tasks:
+            task.cancel()
+        for task in tasks:
             try:
-                await self.worker
+                await task
             except asyncio.CancelledError:
                 pass
 
@@ -86,8 +92,8 @@ class Service:
                     else:
                         self.inbox.fail(job, 'reported_failure', permanent=True)
                     continue
-                await self.process(job)
-                self.inbox.done(job['id'])
+                if await self.process(job) is not False:
+                    self.inbox.done(job['id'])
             except asyncio.CancelledError:
                 raise
             except Exception as error:
@@ -138,6 +144,10 @@ class Service:
 
     async def process(self, job):
         payload, checkpoint = job['payload'], job['checkpoint']
+        if payload['event'] == DAILY_EVENT:
+            if payload['target']['group_id'] not in self.groups:
+                return
+            return await self.daily.process(job)
         validate_envelope(payload, self.credential_id, self.groups, self.legacy_groups)
         name = payload['event']
         if name == 'members.sync.request':
