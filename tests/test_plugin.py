@@ -371,6 +371,15 @@ class CommandTests(ServiceFixture, unittest.IsolatedAsyncioTestCase):
         with self.assertRaises(ValueError):
             await self.execute('今天 2025-02-29')
 
+    async def test_manual_on_this_day_without_records_returns_empty_notice(self):
+        self.api.results[('GET', '/v1/on-this-day')] = {
+            'broadcast_text': '历史上的今天：暂无往年记录。', 'broadcast_images': [],
+            'page': 1, 'has_more': False, 'total': 0, 'items': [],
+        }
+        text, images = await self.execute('今天')
+        self.assertIn('暂无往年记录', text)
+        self.assertEqual(images, [])
+
     async def test_review_uses_bound_qq_and_requires_reason(self):
         await self.execute('审核 12 reject "缺少活动规则"')
         self.assertEqual(self.api.calls[-1][2]['body'], {'qq': SENDER, 'action': 'reject', 'reason': '缺少活动规则'})

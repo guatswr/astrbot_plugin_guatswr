@@ -9,19 +9,20 @@ from .broadcast import on_this_day
 from .protocol import EVENTS, positive, qq, uuid
 
 HELP = '''桂航绯想天网站助手
-/桂航 活动 [页码] [类型] ｜ /桂航 详情 活动ID
-/桂航 文章 [页码] ｜ /桂航 成员 [页码] ｜ /桂航 群史 [页码]
-/桂航 今天 [YYYY-MM-DD] [all|articles|history] [页码]
+主指令：/guatswr 或 /桂航绯想天，以下示例均可替换使用。
+/guatswr 活动 [页码] [类型] ｜ /guatswr 详情 活动ID
+/guatswr 文章 [页码] ｜ /guatswr 成员 [页码] ｜ /guatswr 群史 [页码]
+/guatswr 今天 [YYYY-MM-DD] [all|articles|history] [页码]
 以下指令请私聊：
-/桂航 绑定 网站生成的绑定码
-/桂航 报名 活动ID "常用ID" /uploads/已有头像 "机签" "来源"
-/桂航 我的报名 活动ID ｜ /桂航 取消报名 活动ID
-/桂航 待审 [页码] ｜ /桂航 审核 活动ID approve|reject "理由"
+/guatswr 绑定 网站生成的绑定码
+/guatswr 报名 活动ID "常用ID" /uploads/已有头像 "机签" "来源"
+/guatswr 我的报名 活动ID ｜ /guatswr 取消报名 活动ID
+/guatswr 待审 [页码] ｜ /guatswr 审核 活动ID approve|reject "理由"
 以下订阅指令在目标群内使用，限 AstrBot 管理员：
-/桂航 订阅 事件名 [活动ID或0] [提前分钟]
-/桂航 订阅列表 ｜ /桂航 退订 订阅UUID
-管理员私聊：/桂航 投递 [页码] ｜ /桂航 重试 投递UUID ｜ /桂航 队列
-/桂航 本地失败 [页码] ｜ /桂航 本地重试 投递ID
+/guatswr 订阅 事件名 [活动ID或0] [提前分钟]
+/guatswr 订阅列表 ｜ /guatswr 退订 订阅UUID
+管理员私聊：/guatswr 投递 [页码] ｜ /guatswr 重试 投递UUID ｜ /guatswr 队列
+/guatswr 本地失败 [页码] ｜ /guatswr 本地重试 投递ID
 事件名示例：activity.published、event.approved、reminder.start
 含空格的参数用英文双引号包住；报名头像须已上传到网站。'''
 
@@ -75,7 +76,7 @@ class Commands:
             raise ValueError('请在要管理订阅的目标群内使用。')
         if command in ('活动', '文章', '成员', '群史'):
             if len(args) > (2 if command == '活动' else 1):
-                raise ValueError('参数过多，请查看 /桂航 帮助。')
+                raise ValueError('参数过多，请查看 /guatswr 帮助。')
             resource = {'活动': 'events', '文章': 'articles', '成员': 'members', '群史': 'history'}[command]
             params = page_args(args)
             if len(args) > 1:
@@ -168,4 +169,4 @@ class Commands:
             self.service.inbox.retry_notification(identifier)
             self.service.wake.set()
             return '本地群通知已重新排队。', []
-        raise ValueError('未知指令或参数数量不符，请查看 /桂航 帮助。')
+        raise ValueError('未知指令或参数数量不符，请查看 /guatswr 帮助。')

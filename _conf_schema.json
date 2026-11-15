@@ -83,7 +83,7 @@
     "description": "启用历史上的今天每日群播报",
     "type": "bool",
     "default": false,
-    "hint": "每天按北京时间向下列目标群播报；需 query:read 权限，修改后重载插件。"
+    "hint": "每天按北京时间向下列目标群播报，仅有往年记录时发送；需 query:read 权限，修改后重载插件。"
   },
   "daily_broadcast_time": {
     "description": "每日播报时间（北京时间）",

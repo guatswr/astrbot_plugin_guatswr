@@ -15,8 +15,10 @@ def beijing_now():
     return datetime.now(BEIJING)
 
 
-async def on_this_day(api, config, params):
+async def on_this_day(api, config, params, *, skip_empty=False):
     result = await api.request('GET', '/v1/on-this-day', params=params)
+    if skip_empty and not result['items']:
+        return '', []
     output = result['broadcast_text']
     if result.get('has_more'):
         output += f"\n还有更多记录，请查询第 {result['page'] + 1} 页。"
@@ -96,7 +98,7 @@ class DailyBroadcast:
             return False
         if 'broadcast' not in checkpoint:
             text, images = await on_this_day(self.api, self.config,
-                {'date': day, 'source': 'all', 'page': 1, 'limit': 10})
+                {'date': day, 'source': 'all', 'page': 1, 'limit': 10}, skip_empty=True)
             checkpoint['broadcast'] = {'text': text, 'images': images}
             self.inbox.checkpoint(job['id'], checkpoint)
         broadcast = checkpoint['broadcast']

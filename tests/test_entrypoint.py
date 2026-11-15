@@ -56,7 +56,13 @@ class EntryPointTests(unittest.IsolatedAsyncioTestCase):
         api_module.logger = logging.getLogger('test-entrypoint')
         event_module = types.ModuleType('astrbot.api.event')
         event_module.AstrMessageEvent = FakeEvent
-        event_module.filter = types.SimpleNamespace(command=lambda name: lambda function: function)
+        self.command_names = set()
+
+        def command(name, *, alias=None):
+            self.command_names.update({name, *(alias or set())})
+            return lambda function: function
+
+        event_module.filter = types.SimpleNamespace(command=command)
         components = types.ModuleType('astrbot.api.message_components')
         components.Image = types.SimpleNamespace(fromBase64=lambda value: ('image', value))
         star_module = types.ModuleType('astrbot.api.star')
@@ -85,7 +91,7 @@ class EntryPointTests(unittest.IsolatedAsyncioTestCase):
     async def test_disabled_lifecycle_opens_no_connections(self):
         await self.plugin.initialize()
         self.assertIsNone(self.plugin.api)
-        event = FakeEvent('桂航 帮助')
+        event = FakeEvent('guatswr 帮助')
         output = [item async for item in self.plugin.guatswr(event)]
         self.assertIn('尚未启用', output[0][1])
         self.assertTrue(event.stopped)
@@ -98,7 +104,7 @@ class EntryPointTests(unittest.IsolatedAsyncioTestCase):
         api.download = AsyncMock(side_effect=[ValueError('broken image'), b'png-bytes'])
         self.plugin.service = types.SimpleNamespace(api=api, groups={GROUP}, config=config())
         self.plugin.api = api
-        result = [item async for item in self.plugin.guatswr(FakeEvent('桂航 今天'))]
+        result = [item async for item in self.plugin.guatswr(FakeEvent('guatswr 今天'))]
         self.assertEqual(result[0], ('text', 'history [CQ:at,qq=all]'))
         self.assertEqual(len(result), 2)
         self.assertEqual(result[1][0], 'chain')
@@ -106,5 +112,24 @@ class EntryPointTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_handler_rejects_other_bot_instance(self):
         self.plugin.service = object()
-        result = [item async for item in self.plugin.guatswr(FakeEvent('桂航 今天', platform='another-bot'))]
+        result = [item async for item in self.plugin.guatswr(FakeEvent('guatswr 今天', platform='another-bot'))]
         self.assertIn('配置的 QQ', result[0][1])
+
+    async def test_english_and_chinese_commands_dispatch_with_and_without_slash(self):
+        self.assertEqual(self.command_names, {'guatswr', '桂航绯想天'})
+        api = FakeApi()
+        api.results[('GET', '/v1/on-this-day')] = {
+            'broadcast_text': 'today', 'broadcast_images': [], 'has_more': False}
+        self.plugin.service = types.SimpleNamespace(api=api, groups={GROUP}, config=config())
+        self.plugin.api = api
+        for command in ('guatswr', '桂航绯想天'):
+            for prefix in ('', '/'):
+                with self.subTest(command=command, prefix=prefix):
+                    result = [item async for item in self.plugin.guatswr(
+                        FakeEvent(prefix + command + ' 今天 2026-11-15 history 2'))]
+                    self.assertEqual(result, [('text', 'today')])
+                    self.assertEqual(api.calls[-1], ('GET', '/v1/on-this-day', {
+                        'params': {'limit': 10, 'date': '2026-11-15', 'source': 'history', 'page': 2}}))
+                    help_result = [item async for item in self.plugin.guatswr(FakeEvent(prefix + command))]
+                    self.assertIn('/guatswr 活动', help_result[0][1])
+                    self.assertIn('/桂航绯想天', help_result[0][1])

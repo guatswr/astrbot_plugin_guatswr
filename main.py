@@ -62,9 +62,9 @@ class GuatSWRPlugin(Star):
             self.inbox.close()
             self.inbox = None
 
-    @filter.command('桂航')
+    @filter.command('guatswr', alias={'桂航绯想天'})
     async def guatswr(self, event: AstrMessageEvent):
-        """桂航 帮助：查询网站、报名、订阅及审核。"""
+        """guatswr / 桂航绯想天 帮助：查询网站、报名、订阅及审核。"""
         event.stop_event()
         if not self.service:
             yield event.plain_result('插件尚未启用，请管理员完成插件配置。\n' + HELP)
@@ -75,7 +75,7 @@ class GuatSWRPlugin(Star):
         try:
             # AstrBot's command filter consumes its wake prefix before dispatch.
             # No formal parameters: parse the remaining text with quoted strings.
-            text = re.sub(r'^/?桂航(?:\s+|$)', '', event.get_message_str().strip(), count=1)
+            text = re.sub(r'^/?(?:guatswr|桂航绯想天)(?:\s+|$)', '', event.get_message_str().strip(), count=1)
             output, images = await Commands(self.service).execute(
                 text, sender=event.get_sender_id(), group=event.get_group_id(),
                 private=event.is_private_chat(), admin=event.is_admin())

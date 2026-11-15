@@ -27,7 +27,7 @@ class DailyBroadcastTests(unittest.IsolatedAsyncioTestCase):
         self.api = FakeApi()
         self.api.results[('GET', '/v1/on-this-day')] = {
             'broadcast_text': '历史上的今天 [CQ:at,qq=all]', 'broadcast_images': [],
-            'page': 1, 'has_more': False,
+            'page': 1, 'has_more': False, 'total': 1, 'items': [{'id': 1}],
         }
         self.api.download = AsyncMock(return_value=b'png-bytes')
         self.bot = type('Bot', (), {'send': AsyncMock(), 'members': AsyncMock()})()
@@ -148,7 +148,7 @@ class DailyBroadcastTests(unittest.IsolatedAsyncioTestCase):
     async def test_restart_resumes_chunks_images_and_frozen_content(self):
         self.api.results[('GET', '/v1/on-this-day')] = {
             'broadcast_text': 'a' * 3001, 'broadcast_images': ['bad', 'good', 'capped'],
-            'page': 1, 'has_more': True,
+            'page': 1, 'has_more': True, 'total': 11, 'items': [{'id': 1}],
         }
         settings = daily_config(max_broadcast_images=2)
         with tempfile.TemporaryDirectory() as temp:
@@ -195,6 +195,29 @@ class DailyBroadcastTests(unittest.IsolatedAsyncioTestCase):
         await service.process(self.inbox.take())
         self.api.download.assert_not_awaited()
         self.bot.send.assert_awaited_once()
+
+    async def test_empty_history_is_completed_without_messages_or_repeated_queries(self):
+        self.api.results[('GET', '/v1/on-this-day')] = {
+            'broadcast_text': '历史上的今天（11月14日）：暂无往年记录。',
+            'broadcast_images': [], 'page': 1, 'has_more': False, 'total': 0, 'items': [],
+        }
+        self.service.config.update(webhook_port=0)
+        await self.service.start()
+        for _ in range(100):
+            if self.inbox.summary().get('done'):
+                break
+            await asyncio.sleep(.01)
+        self.assertEqual(self.inbox.summary(), {'done': 1})
+        self.assertEqual(self.service.daily.enqueue(), 0)
+        self.assertEqual(len(self.api.calls), 1)
+        self.bot.send.assert_not_awaited()
+        self.api.download.assert_not_awaited()
+
+    async def test_records_are_sent_even_when_text_mentions_no_records(self):
+        self.api.results[('GET', '/v1/on-this-day')]['broadcast_text'] = '活动文章：暂无往年记录功能介绍'
+        self.service.daily.enqueue()
+        await self.service.process(self.inbox.take())
+        self.bot.send.assert_awaited_once_with('group', GROUP, text='活动文章：暂无往年记录功能介绍')
 
     async def test_image_send_failure_retries_image_without_repeating_text(self):
         self.api.results[('GET', '/v1/on-this-day')]['broadcast_images'] = ['image']
